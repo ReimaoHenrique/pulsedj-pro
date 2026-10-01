@@ -1,0 +1,220 @@
+<div class="dj-app">
+  <!-- Top Application Navigation / Status Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="app-brand">
+        <span class="brand-pulse">⚡</span>
+        <span class="brand-text">PULSE<span class="highlight">DJ</span></span>
+        <span class="pro-tag">PRO</span>
+      </div>
+
+      <!-- Master Clock & Quantize -->
+      <div class="master-clock-box">
+        <span class="clock-label">MASTER BPM</span>
+        <span class="clock-value">{{ (audio.deckA().track?.bpm || 126).toFixed(1) }}</span>
+        <button 
+          class="quantize-btn"
+          [class.active]="quantizeActive()"
+          (click)="toggleQuantize()"
+        >
+          QUANTIZE
+        </button>
+      </div>
+    </div>
+
+    <!-- Center: Master REC & Audio Status -->
+    <div class="header-center">
+      <!-- Mix Recorder -->
+      <div class="recorder-box">
+        <button 
+          class="rec-btn"
+          [class.recording]="audio.master().isRecording"
+          (click)="toggleRecording()"
+        >
+          <span class="rec-dot"></span>
+          <span>{{ audio.master().isRecording ? 'REC ' + formatRecDuration(audio.master().recordingDuration) : 'GRAVAR MIX' }}</span>
+        </button>
+      </div>
+
+      <!-- View Mode Selector -->
+      <div class="view-selector">
+        <button 
+          class="view-btn" 
+          [class.active]="viewMode() === 'PRO'" 
+          (click)="setViewMode('PRO')"
+        >
+          2-DECK PRO
+        </button>
+        <button 
+          class="view-btn" 
+          [class.active]="viewMode() === 'STACKED'" 
+          (click)="setViewMode('STACKED')"
+        >
+          WAVE STACKED
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Utility Controls & Shortcuts modal -->
+    <div class="header-right">
+      <button class="header-btn" (click)="showHelpModal.set(true)" title="Atalhos do Teclado (H)">
+        ⌨ ATALHOS
+      </button>
+      <button class="header-btn" (click)="toggleFullscreen()" title="Tela Cheia">
+        ⛶ TELA CHEIA
+      </button>
+    </div>
+  </header>
+
+  <!-- Stacked Waveforms Display (Serato / Rekordbox beatmatching view) -->
+  <section class="stacked-waveforms-section" *ngIf="viewMode() !== 'MINI'">
+    <app-stacked-waveform
+      [deckA]="audio.deckA()"
+      [deckB]="audio.deckB()"
+      (seekDeckA)="onDeckSeek('A', $event)"
+      (seekDeckB)="onDeckSeek('B', $event)"
+    ></app-stacked-waveform>
+  </section>
+
+  <!-- Main DJ Workstation: Deck A | Central Mixer | Deck B -->
+  <main class="workstation-grid">
+    <!-- Deck A (Left) -->
+    <section class="workstation-deck deck-left">
+      <app-deck
+        [deck]="audio.deckA()"
+        [samplers]="audio.samplerPads()"
+        (play)="onDeckPlay('A')"
+        (pause)="onDeckPause('A')"
+        (togglePlayEvent)="onDeckTogglePlay('A')"
+        (cueDown)="onDeckCueDown('A')"
+        (cueUp)="onDeckCueUp('A')"
+        (seek)="onDeckSeek('A', $event)"
+        (tempoChange)="onDeckTempoChange('A', $event)"
+        (pitchRangeChange)="onDeckPitchRangeChange('A', $event)"
+        (syncToggle)="onDeckSync('A')"
+        (masterTempoToggle)="onDeckMasterTempo('A')"
+        (vinylModeToggle)="onDeckVinylMode('A')"
+        (slipModeToggle)="onDeckSlipMode('A')"
+        (nudge)="onDeckNudge('A', $event)"
+        (jogMove)="onDeckJogMove('A', $event)"
+        (loopToggle)="onDeckLoopToggle('A')"
+        (loopSizeChange)="onDeckLoopSizeChange('A', $event)"
+        (hotCueTrigger)="onDeckHotCue('A', $event)"
+        (padModeChange)="onDeckPadMode('A', $event)"
+        (samplerTrigger)="onDeckSampler($event)"
+        (stemToggle)="onDeckStemToggle('A', $event)"
+        (trackDrop)="onDeckTrackDrop('A', $event)"
+        (fileDrop)="onDeckFileDrop('A', $event)"
+      ></app-deck>
+    </section>
+
+    <!-- Central Mixer (Middle) -->
+    <section class="workstation-mixer">
+      <app-mixer
+        [channelA]="audio.channelA()"
+        [channelB]="audio.channelB()"
+        [master]="audio.master()"
+        [fx1]="audio.fx1()"
+        [fx2]="audio.fx2()"
+        [vuLevelA]="audio.deckA().vuLevel"
+        [vuLevelB]="audio.deckB().vuLevel"
+        (gainChange)="onMixerGain($event)"
+        (eqChange)="onMixerEq($event)"
+        (colorFxChange)="onMixerColorFx($event)"
+        (faderChange)="onMixerFader($event)"
+        (crossfaderChange)="onMixerCrossfader($event)"
+        (crossfaderCurveChange)="onMixerCrossfaderCurve($event)"
+        (masterVolumeChange)="onMixerMasterVolume($event)"
+        (boothVolumeChange)="onMixerBoothVolume($event)"
+        (headphoneMixChange)="onMixerHeadphoneMix($event)"
+        (headphoneGainChange)="onMixerHeadphoneGain($event)"
+        (togglePfl)="onMixerTogglePfl($event)"
+        (toggleFx)="onMixerToggleFx($event)"
+        (fxTypeChange)="onMixerFxType($event)"
+        (fxDryWetChange)="onMixerFxDryWet($event)"
+      ></app-mixer>
+    </section>
+
+    <!-- Deck B (Right) -->
+    <section class="workstation-deck deck-right">
+      <app-deck
+        [deck]="audio.deckB()"
+        [samplers]="audio.samplerPads()"
+        (play)="onDeckPlay('B')"
+        (pause)="onDeckPause('B')"
+        (togglePlayEvent)="onDeckTogglePlay('B')"
+        (cueDown)="onDeckCueDown('B')"
+        (cueUp)="onDeckCueUp('B')"
+        (seek)="onDeckSeek('B', $event)"
+        (tempoChange)="onDeckTempoChange('B', $event)"
+        (pitchRangeChange)="onDeckPitchRangeChange('B', $event)"
+        (syncToggle)="onDeckSync('B')"
+        (masterTempoToggle)="onDeckMasterTempo('B')"
+        (vinylModeToggle)="onDeckVinylMode('B')"
+        (slipModeToggle)="onDeckSlipMode('B')"
+        (nudge)="onDeckNudge('B', $event)"
+        (jogMove)="onDeckJogMove('B', $event)"
+        (loopToggle)="onDeckLoopToggle('B')"
+        (loopSizeChange)="onDeckLoopSizeChange('B', $event)"
+        (hotCueTrigger)="onDeckHotCue('B', $event)"
+        (padModeChange)="onDeckPadMode('B', $event)"
+        (samplerTrigger)="onDeckSampler($event)"
+        (stemToggle)="onDeckStemToggle('B', $event)"
+        (trackDrop)="onDeckTrackDrop('B', $event)"
+        (fileDrop)="onDeckFileDrop('B', $event)"
+      ></app-deck>
+    </section>
+  </main>
+
+  <!-- Bottom Track Browser & Crate Library -->
+  <footer class="browser-footer">
+    <app-browser
+      [tracks]="audio.library()"
+      [deckATrackId]="audio.deckA().track?.id || null"
+      [deckBTrackId]="audio.deckB().track?.id || null"
+      [activeDeckKey]="audio.deckA().track?.key || '8A'"
+      (loadToDeck)="onLoadTrack($event)"
+      (fileImport)="onImportFile($event)"
+    ></app-browser>
+  </footer>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div class="modal-backdrop" *ngIf="showHelpModal()" (click)="showHelpModal.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>⚡ ATALHOS DO TECLADO - PULSE DJ PRO</h2>
+        <button class="modal-close" (click)="showHelpModal.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcuts-grid">
+          <div class="shortcut-col">
+            <h3 class="col-title a-color">DECK A (ESQUERDA)</h3>
+            <div class="key-row"><kbd>Q</kbd><span>CUE (Segurar / Voltar)</span></div>
+            <div class="key-row"><kbd>W</kbd><span>PLAY / PAUSE</span></div>
+            <div class="key-row"><kbd>E</kbd><span>SYNC BPM</span></div>
+            <div class="key-row"><kbd>A</kbd> / <kbd>S</kbd><span>Pitch Bend (Nudge - / +)</span></div>
+            <div class="key-row"><kbd>1</kbd> .. <kbd>4</kbd><span>Hot Cues 1 a 4</span></div>
+          </div>
+
+          <div class="shortcut-col">
+            <h3 class="col-title b-color">DECK B (DIREITA)</h3>
+            <div class="key-row"><kbd>U</kbd><span>CUE (Segurar / Voltar)</span></div>
+            <div class="key-row"><kbd>I</kbd><span>PLAY / PAUSE</span></div>
+            <div class="key-row"><kbd>O</kbd><span>SYNC BPM</span></div>
+            <div class="key-row"><kbd>K</kbd> / <kbd>L</kbd><span>Pitch Bend (Nudge - / +)</span></div>
+            <div class="key-row"><kbd>7</kbd> .. <kbd>0</kbd><span>Hot Cues 1 a 4</span></div>
+          </div>
+
+          <div class="shortcut-col">
+            <h3 class="col-title m-color">MIXER & SAMPLER</h3>
+            <div class="key-row"><kbd>[</kbd> / <kbd>]</kbd><span>Crossfader Esquerda / Direita</span></div>
+            <div class="key-row"><kbd>\</kbd><span>Crossfader Centro</span></div>
+            <div class="key-row"><kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd><span>Sample Pads (Kick, Snare, Hat, Horn)</span></div>
+            <div class="key-row"><kbd>ESPAÇO</kbd><span>Play / Pause Deck A</span></div>
+            <div class="key-row"><kbd>H</kbd><span>Abrir / Fechar este Menu</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
